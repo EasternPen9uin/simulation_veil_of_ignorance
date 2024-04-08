@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ai-town 대화목록 뷰어</title>
+    <style>
+        .conversation {
+            background: transparent;
+        }
+        .conversation:hover {
+            background: rebeccapurple;
+            color:white;
+            transition: all 0.2s;
+        }
+        .chatter1 {
+            background: rgb(255, 247, 178);
+        }
+    </style>
+</head>
+<body>
+    파일 선택 : <input type="file" id="fileInput" accept=".jsonl">
+    <input type="search" id="searchbox" onkeypress="if(event.keyCode==13){search();}"> <button id="searchbtn">검색</button>
+    <button id="engbtn" style="height:30px;width:80px;display:none;">ENG(E)</button> 
+    <button id="korbtn"style="height:30px;width:80px;display:none;">KOR(R)</button>
+	<span id="notranslationmsg" style="display:none;">**이 파일은 번역기능 사용 불가능**</span>
+	<span id="translationmsg" style="display:none;"><br>(한국어 번역의 경우 NHNDQ/nllb-finetuned-en2ko 모델로 기계번역하였습니다. (<a href="https://huggingface.co/NHNDQ/nllb-finetuned-en2ko" target="_blank">HuggingFace 링크</a>)</span>	
+    <br><br>
+    <div id="conversationList" style="overflow:scroll; width:450px; height:800px; border:1px solid; float:left;"></div> 
+    <div id="chatWindow" style="overflow:scroll; width:800px; height:800px; border:1px solid;"></div>
+    <br> 2024.03.29 수정됨
+    <br> ## 단축키 :
+    <br> * 좌우 화살키 : 이전/이후 대화 열기
+    <br> * E/R : 영어/한국어 전환 
+    <script>
+        // 1. dialogDict에 dialogId별로 일단 대화를 저장
+        // 2. 저장 다 했다면 
+        /*
+            dialogDict = {
+                dialogId1 : [
+                    {이름, 시간, 내용},
+                    {이름, 시간, 내용},
+                    {이름, 시간, 내용},
+                    ...
+                ],
+                dialogId2 : [
+                    {이름, 시간, 내용},
+                    {이름, 시간, 내용},
+                    {이름, 시간, 내용},
+                    ...
+                ], ...
+            }
+        */
+        const UNTYPABLE_STRING = "҉͡as갌๏̯͡ew뛦d๏҉d"; // GPT한테 절대로 키보드로 안 칠 거 같은 문자열 추천받은거
+        let searchedKeyword;
+        let dialogDict;
+        let lastDialogId;
+        let idx2keyDict;
+        let key2idxDict;
+        let isInitialized = false;
+        const showChattingContainer = {};
+        //let showChatting;
+        const engbtn = document.querySelector("#engbtn");
+        const korbtn = document.querySelector("#korbtn");
+        const notranslationmsg = document.querySelector("#notranslationmsg");
+        const conversationList = document.querySelector("#conversationList");
+        const chatWindow = document.querySelector("#chatWindow");
+        const searchbox = document.querySelector("#searchbox");
+        const searchbtn = document.querySelector("#searchbtn");
+        function showChattingENG(dialogId) {
+            lastDialogId = dialogId;
+            chatWindow.innerHTML = '';
+            const chatList = dialogDict[dialogId];
+            const leftAlignAuthor = chatList[0]['author'];
+            chatWindow.innerHTML += ``
+            for(let i=0; i < chatList.length; i++) {
+                const author = chatList[i]['author'];
+                const creationTime = chatList[i]['creationTime'];
+                let text = chatList[i]['text'];
+                text = text.replaceAll(searchedKeyword, `<span style="background-color:orange">${searchedKeyword}</span>`);
+                chatWindow.innerHTML += `<div class= "${author == leftAlignAuthor ? "chatter0" : "chatter1"}" style="border:1px solid;">${author}<br>${key2idxDict[dialogId]} / ${(new Date(creationTime)).toLocaleString()}<br>${text}</div>`;
+            }
+        }
+        function showChattingKOR(dialogId) {
+            lastDialogId = dialogId;
+            chatWindow.innerHTML = '';
+            const chatList = dialogDict[dialogId];
+            const leftAlignAuthor = chatList[0]['author'];
+            for(let i=0; i < chatList.length; i++) {
+                const author = chatList[i]['author'];
+                const creationTime = chatList[i]['creationTime'];
+                let text = chatList[i]['textKOR'];
+                text = text.replaceAll(searchedKeyword, `<span style="background-color:orange;">${searchedKeyword}</span>`);
+                chatWindow.innerHTML += `<div class= "${author == leftAlignAuthor ? "chatter0" : "chatter1"}" style="border:1px solid;">${author}<br>${key2idxDict[dialogId]} / ${(new Date(creationTime)).toLocaleString()}<br>${text}</div>`;
+            }
+        }
+        function changeToENG() {
+            showChattingContainer.showChatting = showChattingENG;
+            if(lastDialogId != null) {showChattingContainer.showChatting(lastDialogId);}
+        }
+        function isKORavailable() {
+            return dialogDict[Object.keys(dialogDict)[0]][0]['textKOR'] !== undefined;
+        }
+        function changeToKOR() {
+            if(isKORavailable() != true || isInitialized == false) {return;}
+            showChattingContainer.showChatting = showChattingKOR;
+            if(lastDialogId != null) {showChattingContainer.showChatting(lastDialogId);}
+        }
+        function showNext() {
+            if(isInitialized == false) {return;}
+            const idxOflastDialogId = key2idxDict[lastDialogId];
+            const nextIDXOflastDialogId = idxOflastDialogId+1;
+            const nextDialogKey = idx2keyDict[nextIDXOflastDialogId];
+            if(nextDialogKey != null) {
+                showChattingContainer.showChatting(nextDialogKey);
+            }
+        }
+        function showPrev() {
+            if(isInitialized == false) {return;}
+            const idxOflastDialogId = key2idxDict[lastDialogId];
+            const prevIDXOflastDialogId = idxOflastDialogId-1;
+            const prevDialogKey = idx2keyDict[prevIDXOflastDialogId];
+            if(prevDialogKey != null) {
+                showChattingContainer.showChatting(prevDialogKey);
+            }
+        }
+        function handleKeyPress(event) {
+            if (event.keyCode === 37) {showPrev();} // 왼쪽
+            else if (event.keyCode === 39) {showNext();} // 오른쪽
+            else if (event.keyCode === 69) {changeToENG();} // E키
+            else if (event.keyCode === 82) {changeToKOR();} // R키
+        }
+        document.addEventListener('keydown', handleKeyPress);
+
+        // 파일 읽기 함수
+        function readFile(file) {
+            return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = (event) => {resolve(event.target.result);}; reader.onerror = (error) => {reject(error);}; reader.readAsText(file);});
+        }
+        // 파일 처리 함수
+        async function processFile(file) {
+            lastDialogId = null;
+            dialogDict = {};
+            idx2keyDict = {};
+            key2idxDict = {};
+            searchedKeyword = UNTYPABLE_STRING;
+            chatWindow.innerHTML = '';
+            conversationList.innerHTML = '';
+            try {
+                const fileContent = await readFile(file);
+                const lines = fileContent.split('\n');
+                const objList = [];
+                lines.forEach((line) => {
+                    if (line.trim() !== '') {
+                        const obj = JSON.parse(line);
+                        objList.push(obj);
+                    }
+                });
+                objList.sort(function(a, b){return a['_creationTime'] - b['_creationTime'];});
+                let idx=0;
+                objList.forEach((obj) => {
+                    const conversationId = obj['conversationId'];
+                    const author = obj['author'];
+                    const creationTime = obj['_creationTime'];
+                    const text = obj['text'];
+                    const textKOR = obj['textKOR'];
+                    // 처음 추가하는 conversationId라면
+                    if(conversationId in dialogDict == false) {
+                        idx2keyDict[idx] = conversationId;
+                        key2idxDict[conversationId] = idx;
+                        // div(conversationList)에 해당하는 div 하나 추가
+                        conversationList.innerHTML += `<div class="conversation" style="border:1px solid;" data-cid="${conversationId}" onclick="(function(){showChattingContainer.showChatting('${conversationId}')})();">${idx}<br>${(new Date(creationTime)).toLocaleString()}</div>`;
+                        dialogDict[conversationId] = [];
+                        idx++;
+                    }
+                    dialogDict[conversationId].push({author, creationTime, text, textKOR});
+                });
+                showChattingContainer.showChatting = showChattingENG;
+                if(isKORavailable()) {
+                    engbtn.style.display = "inline"; 
+                    korbtn.style.display = "inline";
+                    notranslationmsg.style.display = "none";
+                    engbtn.onclick = changeToENG;
+                    korbtn.onclick = changeToKOR;
+					translationmsg.style.display = "inline";
+                }
+                else {
+                    engbtn.style.display = "none"; 
+                    korbtn.style.display = "none";
+                    notranslationmsg.style.display = "inline";
+					translationmsg.style.display = "none";
+                }
+                isInitialized = true;
+            } catch (error) {console.error('파일을 읽는 중 오류가 발생했습니다.', error);}
+        }
+        // 파일 선택 시 동작
+        function handleFileSelect(event) { const fileInput = event.target; const selectedFile = fileInput.files[0]; if (selectedFile) { processFile(selectedFile); } }
+
+        function search() {
+            let word = searchbox.value;
+			const divList = conversationList.querySelectorAll("div");
+
+			if(word.trim() == "") {
+                word = UNTYPABLE_STRING;
+            }
+			searchedKeyword = word;
+
+            for(let i=0; i<divList.length; i++) 
+            {
+                const divNow = divList[i];
+                const idxNow = divNow.dataset.cid;
+                const dialogList = dialogDict[idxNow];
+                if(isKORavailable()) {
+                    for(let k=0; k<dialogList.length; k++) {
+                        if(dialogList[k]['textKOR'].indexOf(word) !== -1 || dialogList[k]['text'].indexOf(word) !== -1) {
+                            divNow.style.border = "5px solid orange";
+                            break;
+                        } 
+                        else {
+                            divNow.style.border = "1px solid";
+                        }
+                    }
+                }
+                else {
+                    for(let k=0; k<dialogList.length; k++) {
+                        if(dialogList[k]['text'].indexOf(word) !== -1) {
+                            divNow.style.border = "5px solid orange";
+                            break;
+                        } 
+                        else {
+                            divNow.style.border = "1px solid";
+                        }  
+                    }
+                }                
+            }
+        }
+        // 이벤트 리스너 등록
+        document.querySelector('input[type="file"]').addEventListener('change', handleFileSelect);
+        searchbtn.onclick = search;
+    </script>
+</body>
+</html>

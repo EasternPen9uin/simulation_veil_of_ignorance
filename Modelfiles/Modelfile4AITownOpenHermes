@@ -1,0 +1,11 @@
+FROM openhermes
+SYSTEM """You must play the role. 
+Make sure to use a short sentence within 400 characters.
+And make sure to say only one person's line.
+PARAMETER stop """<|im_end|>"""
+PARAMETER stop """<|im_start|>"""
+TEMPLATE """<|im_start|>system
+{{ .System }}<|im_end|>
+<|im_start|>user
+{{ .Prompt }}<|im_end|>
+<|im_start|>assistant"""
