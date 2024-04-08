@@ -205,15 +205,18 @@
             }
 			searchedKeyword = word;
 
+            let valSearched = 0;
             for(let i=0; i<divList.length; i++) 
             {
                 const divNow = divList[i];
                 const idxNow = divNow.dataset.cid;
                 const dialogList = dialogDict[idxNow];
+                
                 if(isKORavailable()) {
                     for(let k=0; k<dialogList.length; k++) {
                         if(dialogList[k]['textKOR'].indexOf(word) !== -1 || dialogList[k]['text'].indexOf(word) !== -1) {
                             divNow.style.border = "5px solid orange";
+                            valSearched++;
                             break;
                         } 
                         else {
@@ -225,6 +228,7 @@
                     for(let k=0; k<dialogList.length; k++) {
                         if(dialogList[k]['text'].indexOf(word) !== -1) {
                             divNow.style.border = "5px solid orange";
+                            valSearched++;
                             break;
                         } 
                         else {
@@ -233,6 +237,7 @@
                     }
                 }                
             }
+            console.log(valSearched+"회 검색됨!");
         }
         // 이벤트 리스너 등록
         document.querySelector('input[type="file"]').addEventListener('change', handleFileSelect);
