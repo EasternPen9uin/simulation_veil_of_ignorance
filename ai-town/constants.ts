@@ -57,11 +57,11 @@ export const INVITE_TIMEOUT = 60000;
 
 // Wait for 20s for another player to say something before jumping in.
 // export const AWKWARD_CONVERSATION_TIMEOUT = 20000;
-export const AWKWARD_CONVERSATION_TIMEOUT = 10 * 60 * 1000; //저사양 그래픽카드용 세팅... (10분)
+export const AWKWARD_CONVERSATION_TIMEOUT = 10 * 60 * 1000;
 
 // Leave a conversation after 2m of participating.
 // export const MAX_CONVERSATION_DURATION = 120 * 1000;
-export const MAX_CONVERSATION_DURATION = 40 * 60 * 1000; //저사양 그래픽카드용 세팅... (40분)
+export const MAX_CONVERSATION_DURATION = 40 * 60 * 1000;
 
 // Leave a conversation if it has more than 8 messages;
 export const MAX_CONVERSATION_MESSAGES = 8;
