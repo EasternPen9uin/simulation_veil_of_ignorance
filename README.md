@@ -6,9 +6,6 @@
 * /
     * gpt.pdf, mistral.pdf, openhermes.pdf : 각 모델 파일 별 대화 내역 pdf입니다.  
     * runOllama.ipynb : 두 로컬 모델(mistralai/Mistral-7B-Instruct-v0.2, teknium/OpenHermes-2.5-Mistral-7B) 구동시 colab상에서 사용한 코드입니다.  
-* /Modelfiles  
-    * Modelfile4AITownMistral : mistralai/Mistral-7B-Instruct-v0.2 모델을 ollama에서 create할 때 사용된 Modelfile입니다.  
-    * Modelfile4AITownOpenHermes : teknium/OpenHermes-2.5-Mistral-7B 모델을 ollama에서 create할 때 사용된 Modelfile입니다.  
 * /jsonl:  
     * util-translate.py : 대화 데이터 파일(messages/documents.jsonl)의 json 구조 내에 한국어 기계번역을 추가하는 코드입니다. 기계번역에는 [NHNDQ/nllb-finetuned-en2ko](https://huggingface.co/NHNDQ/nllb-finetuned-en2ko)모델이 사용합니다.  
     * util-jsonl2markdown : 대화 데이터 파일을 마크다운 파일(.md)로 변환하는 코드입니다.  
