@@ -16,7 +16,7 @@
 
 ## ai-town 관련
 [a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 의 코드가 업데이트 됨에 따라 이 저장소의 코드가 일부 작동하지 않습니다.  
-[a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 사용시 아래 커맨드를 입력해주세요.  
+따라서 아래 커맨드를 입력하여 구버전으로 바꿔주십시오.  
 ```
 git clone https://github.com/a16z-infra/ai-town
 git reset --hard 463b2aae93d11224b880194d4f60c14b3196ccca
