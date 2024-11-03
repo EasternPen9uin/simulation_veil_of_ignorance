@@ -12,4 +12,9 @@
     * gpt.jsonl, mistral.jsonl, openhermes.jsonl : 대화 데이터 파일입니다. util-translate.py파일로 이미 전처리를 끝낸 파일입니다.  
     * reader.html : 대화 데이터 파일을 열람할 수 있는 간단한 리더입니다. 검색 및 번역 전환 기능을 제공합니다.  
 * /ai-town:  
-    * characters.ts, constants.ts, conversation.ts : a16z-infra/ai-town의 원본 코드에서 수정한 부분입니다. 
+    * characters.ts, constants.ts, conversation.ts : [a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 의 원본 코드에서 수정한 부분입니다. 
+
+## ai-town 관련
+[a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 의 코드가 업데이트 됨에 따라 이 저장소의 코드가 일부 작동하지 않습니다. [a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 사용시 아래 커맨드를 입력해주세요.
+```git clone https://github.com/a16z-infra/ai-town
+git reset --hard 463b2aae93d11224b880194d4f60c14b3196ccca```
