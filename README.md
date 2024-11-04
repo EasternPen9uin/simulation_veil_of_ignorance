@@ -3,8 +3,9 @@
 This README provides instructions for setting up AI Town to enable interactions between AI models using locally hosted models. The framework allows for simulated AI interactions based on the "Veil of Ignorance" concept. This setup is part of research on the possibilities of social simulation using language models, developed for submission to the 2024 8th Humanities Festival, 8th Artificial Intelligence Humanities University Student Thesis Contest (Awarded 3rd Prize).
 
 
-Title: Artificial Intelligence Humanities Paper Contest 3rd Prize
-Topic: Social Simulation Based on Large Language Model
+- Title: Artificial Intelligence Humanities Paper Contest
+- Topic: Social Simulation Based on Large Language Model
+- Award: 3rd Prize
 
 
 ## Contents
