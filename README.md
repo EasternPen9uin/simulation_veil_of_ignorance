@@ -1,23 +1,130 @@
-# simulation_veil_of_ignorance
+# AI Town Local Model Setup Guide (simulation_veil_of_ignorance)
 
-"언어 모델 기반 사회 시뮬레이션 가능성 검토" (2024 제8회 인문 페스티벌 제8회 인공지능인문학 대학생 학술논문 경연대회 제출용) 학술 논문에 사용된 코드 및 대화 로그 파일 입니다.
+This README provides instructions for setting up AI Town to enable interactions between AI models using locally hosted models. The framework allows for simulated AI interactions based on the "Veil of Ignorance" concept. This setup is part of research on the possibilities of social simulation using language models, developed for submission to the 2024 8th Humanities Festival, 8th Artificial Intelligence Humanities University Student Thesis Contest (Awarded 3rd Prize).
 
-## 파일 설명
-* /
-    * gpt.pdf, mistral.pdf, openhermes.pdf : 각 모델 파일 별 대화 내역 pdf입니다.  
-    * runOllama.ipynb : 두 로컬 모델(mistralai/Mistral-7B-Instruct-v0.2, teknium/OpenHermes-2.5-Mistral-7B) 구동시 colab상에서 사용한 코드입니다.  
-* /jsonl:  
-    * util-translate.py : 대화 데이터 파일(messages/documents.jsonl)의 json 구조 내에 한국어 기계번역을 추가하는 코드입니다. 기계번역에는 [NHNDQ/nllb-finetuned-en2ko](https://huggingface.co/NHNDQ/nllb-finetuned-en2ko)모델이 사용합니다.  
-    * util-jsonl2markdown : 대화 데이터 파일을 마크다운 파일(.md)로 변환하는 코드입니다.  
-    * gpt.jsonl, mistral.jsonl, openhermes.jsonl : 대화 데이터 파일입니다. util-translate.py파일로 이미 전처리를 끝낸 파일입니다.  
-    * reader.html : 대화 데이터 파일을 열람할 수 있는 간단한 리더입니다. 검색 및 번역 전환 기능을 제공합니다.  
-* /ai-town:  
-    * characters.ts, constants.ts, conversation.ts : [a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 의 원본 코드에서 수정한 부분입니다. 
 
-## ai-town 관련
-[a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) 의 코드가 업데이트 됨에 따라 이 저장소의 코드가 일부 작동하지 않습니다.  
-따라서 아래 커맨드를 입력하여 구버전으로 바꿔주십시오.  
-```
+Title: Artificial Intelligence Humanities Paper Contest 3rd Prize
+Topic: Social Simulation Based on Large Language Model
+
+
+## Contents
+
+- **Prerequisites**
+- **Setup Instructions**
+  - Installing Required Packages
+  - Running the Ollama Server
+  - Tunneling with Ngrok (optional)
+- **Files and Scripts**
+  - `runOllama.ipynb`: Colab setup instructions
+  - `jsonl` utilities: Translation and markdown conversion scripts
+  - AI Town Code Modifications
+
+## Prerequisites
+
+- Google Colab environment
+- Access to GPU resources (recommended for performance)
+- Ngrok (for tunneling, if needed)
+
+## Setup Instructions
+
+### 1. Cloning AI Town (Specific Version)
+
+Recent updates to the [a16z-infra/ai-town](https://github.com/a16z-infra/ai-town) repository cause compatibility issues with this setup. To ensure stable operation, use the following commands to clone an earlier version of the repository:
+
+```bash
 git clone https://github.com/a16z-infra/ai-town
+cd ai-town
 git reset --hard 463b2aae93d11224b880194d4f60c14b3196ccca
 ```
+
+This will revert the repository to a version compatible with your configuration.
+
+### 2. Installing Required Packages
+
+Run the following code in Colab to install necessary utilities and packages, including GPU support and Ollama.
+
+```python
+# Install necessary GPU tools for Ollama
+!sudo apt-get install -y pciutils
+!nvidia-smi
+```
+
+### 3. Loading and Configuring the Mistral 7B Instruct Model
+
+Download and configure the quantized (Q4_K_M) Mistral 7B Instruct v0.2 model:
+
+```python
+# Download the quantized Mistral 7B Instruct model (Source: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF)
+!curl -L -O https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf
+
+# Configure model file for AI Town compatibility
+!echo -e "FROM ./mistral-7b-instruct-v0.2.Q4_K_M.gguf\nSYSTEM \"\"\"You must play the role. \nMake sure to use a short sentence within 400 characters.\nAnd make sure to say only one person's line.\"\"\"\nPARAMETER stop \"<s>\"\nPARAMETER stop \"[INST]\"\nPARAMETER stop \"[/INST]\"\nPARAMETER stop \"</s>\"\nTEMPLATE \"\"\"{{ .System }}\n<s>[INST] {{ .Prompt }} [/INST] {{ .Response }} </s>\n\"\"\"" > Modelfile4AITownMistral
+
+# Create the model in Ollama
+!ollama create aiTownNPCMistral -f ./Modelfile4AITownMistral
+!date
+```
+
+#### Model Testing
+
+To verify the model setup, test it with a simple prompt:
+
+```python
+# Test model response
+!curl http://localhost:11434/api/generate -d '{"model": "aiTownNPCMistral", "prompt": "I use arch btw", "stream": false}'
+```
+
+### 4. Running the Ollama Server
+
+To keep Ollama running, start it as a background process using `nohup`. This step allows Colab to serve AI models without interruption.
+
+```python
+# Run Ollama in the background
+!nohup ollama serve &
+```
+
+Verify that Ollama is running:
+
+```python
+# Check Ollama's status
+!ollama list
+```
+
+### 5. Tunneling with Ngrok (if needed)
+
+For AI Town to access the local model hosted in Colab, you may need to set up a tunnel using Ngrok. This step is only necessary if direct port access is restricted.
+
+```python
+# Install Ngrok for tunneling
+!curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+sudo apt update && sudo apt install ngrok
+```
+
+After installation, configure and start the Ngrok tunnel on the specified port:
+
+```python
+# Start Ngrok tunnel (example for port 11434)
+!ngrok authtoken YOUR_NGROK_AUTH_TOKEN_HERE
+!ngrok http 11434 --domain YOUR_NGROK_DOMAIN_HERE.ngrok-free.app --host-header="localhost:11434"
+```
+
+Copy the forwarding URL generated by Ngrok and configure AI Town to access the model using this URL.
+
+## Files and Scripts
+
+### AI Town Code Modifications
+
+Modified files in `ai-town` include:
+
+- **`characters.ts`**, **`constants.ts`**, **`conversation.ts`**: Modify `a16z-infra/ai-town` options.
+
+### `jsonl` Utilities
+
+- **`util-translate.py`**: Adds machine translations to conversation data using [NHNDQ/nllb-finetuned-en2ko](https://huggingface.co/NHNDQ/nllb-finetuned-en2ko) model.
+- **`util-jsonl2markdown`**: Converts conversation data to markdown format for easier readability.
+- **Data Files** (`gpt.jsonl`, `mistral.jsonl`, `openhermes.jsonl`): Preprocessed conversation data files.
+
+### `runOllama.ipynb`
+
+This notebook provides all necessary code to install and run local models on Colab, including setting up Ollama and Ngrok.
