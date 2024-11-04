@@ -22,8 +22,7 @@ This README provides instructions for setting up AI Town to enable interactions 
 
 ## Prerequisites
 
-- Google Colab environment
-- Access to GPU resources (recommended for performance)
+- Google Colab environment with GPU resources enabled
 - Ngrok (for tunneling, if needed)
 
 ## Setup Instructions
@@ -38,22 +37,29 @@ cd ai-town
 git reset --hard 463b2aae93d11224b880194d4f60c14b3196ccca
 ```
 
-This will revert the repository to a version compatible with your configuration.
+This will revert the repository to a version compatible with your configuration. For information on running AI Town, please refer to the README.md file in the repository.
 
 ### 2. Installing Required Packages
-
+From now on, please run all code below **in Colab**.  
 Run the following code in Colab to install necessary utilities and packages, including GPU support and Ollama.
 
 ```python
 # Install necessary GPU tools for Ollama
 !sudo apt-get install -y pciutils
 !nvidia-smi
+
+# Install Ollama
+!curl -fsSL https://ollama.com/install.sh | sh
+
+# Run Ollama in the background
+!nohup ollama serve &
 ```
 
 ### 3. Loading and Configuring the Mistral 7B Instruct Model
 
-Download and configure the quantized (Q4_K_M) Mistral 7B Instruct v0.2 model:
+Download and configure the quantized (Q4_K_M) Mistral 7B Instruct v0.2 or OpenHermes model. (Run only one of the two codes below.) :
 
+* Using Mistral 7B Model
 ```python
 # Download the quantized Mistral 7B Instruct model (Source: https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF)
 !curl -L -O https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf
@@ -66,6 +72,19 @@ Download and configure the quantized (Q4_K_M) Mistral 7B Instruct v0.2 model:
 !date
 ```
 
+* Using OpenHermes Model
+```python
+# Download the quantized OpenHermes 2.5 model using ollama
+!ollama pull openhermes
+
+# Configure model file for AI Town compatibility
+!echo -e "FROM openhermes\nSYSTEM \"\"\"You must play the role.\nMake sure to use a short sentence within 400 characters.\nAnd make sure to say only one person's line.\nPARAMETER stop \"\"\"<|im_end|>\"\"\"\nPARAMETER stop \"\"\"<|im_start|>\"\"\"\nTEMPLATE \"\"\"<|im_start|>system\n{{ .System }}<|im_end|>\n<|im_start|>user\n{{ .Prompt }}<|im_end|>\n<|im_start|>assistant\"\"\"" > Modelfile4AITownOpenHermes
+
+# Create the model in Ollama
+!ollama create aiTownNPC -f ./Modelfile4AITownOpenHermes
+!date
+```
+
 #### Model Testing
 
 To verify the model setup, test it with a simple prompt:
@@ -75,23 +94,7 @@ To verify the model setup, test it with a simple prompt:
 !curl http://localhost:11434/api/generate -d '{"model": "aiTownNPCMistral", "prompt": "I use arch btw", "stream": false}'
 ```
 
-### 4. Running the Ollama Server
-
-To keep Ollama running, start it as a background process using `nohup`. This step allows Colab to serve AI models without interruption.
-
-```python
-# Run Ollama in the background
-!nohup ollama serve &
-```
-
-Verify that Ollama is running:
-
-```python
-# Check Ollama's status
-!ollama list
-```
-
-### 5. Tunneling with Ngrok (if needed)
+### 4. Tunneling with Ngrok
 
 For AI Town to access the local model hosted in Colab, you may need to set up a tunnel using Ngrok. This step is only necessary if direct port access is restricted.
 
